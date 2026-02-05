@@ -1,106 +1,90 @@
 import streamlit as st
-import math
+
+# Configuración con ICONO (Emoji de ojo) y Nombre para el Celular
+st.set_page_config(
+    page_title="RGP Pro", 
+    page_icon="👁️", 
+    layout="wide"
+)
 
 def calcular_vertice_meridiano(potencia, dist_mm):
     if dist_mm == 0: return potencia
     return potencia / (1 - ((dist_mm / 1000) * potencia))
 
-st.set_page_config(page_title="Calculador RGP Pro", page_icon="👁️", layout="wide")
-
-st.title("👁️ Calculador de Adaptación RGP")
+# Título de la App
+st.title("👁️ RGP Pro - Adaptación")
 st.markdown("---")
 
-# --- BARRA LATERAL: PODER EFECTIVO COMPLETO ---
+# --- BARRA LATERAL: PODER EFECTIVO ---
 with st.sidebar:
-    st.header("Cálculo de Poder Efectivo (Rx)")
-    esf = st.number_input("Esfera (D)", value=-3.00, step=0.25)
-    cil = st.number_input("Cilindro (D)", value=-1.00, step=0.25)
+    st.header("⚙️ Cálculo de Poder Efectivo")
+    esf = st.number_input("Esfera Gafa (D)", value=-5.00, step=0.25)
+    cil = st.number_input("Cilindro Gafa (D)", value=-3.00, step=0.25)
     eje = st.number_input("Eje (°)", value=0, min_value=0, max_value=180, step=1)
-    v_dist = st.number_input("Distancia Vértice (mm)", value=12.0, step=1.0)
+    v_dist = st.number_input("Vértice (mm)", value=12.0, step=1.0)
     
-    # Cálculo por meridiano
-    # Meridiano 1 (Esfera)
-    p1_gafa = esf
-    p1_efectivo = calcular_vertice_meridiano(p1_gafa, v_dist)
+    # Cálculo por meridianos
+    p1_ef = calcular_vertice_meridiano(esf, v_dist)
+    p2_ef = calcular_vertice_meridiano(esf + cil, v_dist)
     
-    # Meridiano 2 (Esfera + Cilindro)
-    p2_gafa = esf + cil
-    p2_efectivo = calcular_vertice_meridiano(p2_gafa, v_dist)
-    
-    # Nueva Rx en plano corneal
-    esf_final = p1_efectivo
-    cil_final = p2_efectivo - p1_efectivo
+    esf_corneal = p1_ef
+    cil_corneal = p2_ef - p1_ef
     
     st.divider()
-    st.subheader("Rx en Plano Corneal:")
-    st.write(f"**{esf_final:+.2f} {cil_final:+.2f} x {eje}°**")
-    st.caption("Este es el poder real que el ojo recibe en la superficie corneal.")
+    st.subheader("Resultado en Córnea:")
+    st.success(f"**{esf_corneal:+.2f} {cil_corneal:+.2f} x {eje}°**")
+    st.caption("Potencia real calculada en plano corneal.")
 
 # --- CUERPO PRINCIPAL: QUERATOMETRÍA ---
-col_k1, col_k2 = st.columns(2)
-with col_k1:
-    k1 = st.number_input("K Plana (D)", value=43.00, step=0.25)
-with col_k2:
-    k2 = st.number_input("K Curva (D)", value=44.00, step=0.25)
+st.header("1. Datos Queratométricos")
+col1, col2 = st.columns(2)
+with col1:
+    k1 = st.number_input("K Plana (D)", value=43.50, step=0.25)
+with col2:
+    k2 = st.number_input("K Curva (D)", value=47.25, step=0.25)
 
 astig_corneal = abs(k1 - k2)
 
-# --- FILOSOFÍA Y DIÁMETRO ---
+# Lógica de Diámetro y Filosofía (Regla de 43.00 D)
 if k1 <= 43.00:
-    filosofia = "ALINEAMIENTO APICAL"
-    color = "green"
-    diams_disponibles = [9.2, 9.6]
+    filo, color, diams = "ALINEAMIENTO APICAL", "green", [9.2, 9.6]
 else:
-    filosofia = "LIBRAMIENTO APICAL"
-    color = "blue"
-    diams_disponibles = [9.2]
+    filo, color, diams = "LIBRAMIENTO APICAL", "blue", [9.2]
 
-st.markdown(f"### Filosofía: :{color}[{filosofia}]")
-diam = st.radio("Diámetro del Lente (mm)", diams_disponibles, horizontal=True)
+st.markdown(f"### Filosofía: :{color}[{filo}]")
+diam = st.radio("Diámetro Seleccionado (mm)", diams, horizontal=True)
 
-# --- LÓGICA DE CÁLCULO DE CURVA BASE (CB) ---
+# --- CÁLCULO DE CURVA BASE (CB) ---
 if astig_corneal <= 3.50:
     if k1 > 43.00: # Libramiento
-        if astig_corneal < 0.75: ajuste = -0.75
-        elif astig_corneal < 1.50: ajuste = -0.50
-        elif astig_corneal < 2.25: ajuste = -0.25
-        elif astig_corneal < 3.00: ajuste = 0.00
-        else: ajuste = 0.25
+        ajuste = [-0.75, -0.50, -0.25, 0.00, 0.25][min(int(astig_corneal/0.75), 4)]
     else: # Alineamiento
         if diam == 9.2:
-            if astig_corneal < 0.75: ajuste = -0.50
-            elif astig_corneal < 1.50: ajuste = -0.25
-            elif astig_corneal < 2.25: ajuste = 0.00
-            elif astig_corneal < 3.00: ajuste = 0.25
-            else: ajuste = 0.50
-        else: # 9.6
-            if astig_corneal < 0.75: ajuste = -0.75
-            elif astig_corneal < 1.50: ajuste = -0.50
-            elif astig_corneal < 2.25: ajuste = -0.25
-            elif astig_corneal < 3.00: ajuste = 0.00
-            else: ajuste = 0.25
+            ajuste = [-0.50, -0.25, 0.00, 0.25, 0.50][min(int(astig_corneal/0.75), 4)]
+        else: # Diámetro 9.6
+            ajuste = [-0.75, -0.50, -0.25, 0.00, 0.25][min(int(astig_corneal/0.75), 4)]
     cb_final = k1 + ajuste
 else:
-    st.warning(f"⚠️ Astigmatismo Corneal Elevado ({astig_corneal:.2f} D)")
-    criterio = st.selectbox("Criterio:", ["Regular (25%)", "Irregular (K Media)", "Plana (50%)"])
-    if "Regular" in criterio: cb_final = k1 + (astig_corneal * 0.75)
-    elif "Irregular" in criterio: cb_final = (k1 + k2) / 2
+    st.warning("⚠️ Astigmatismo Corneal Elevado")
+    crit = st.selectbox("Criterio Especial:", ["Regular (25%)", "Irregular (K Media)", "Plana (50%)"])
+    if "Regular" in crit: cb_final = k1 + (astig_corneal * 0.75)
+    elif "Media" in crit: cb_final = (k1 + k2) / 2
     else: cb_final = k1 + (astig_corneal * 0.50)
 
-# --- RESULTADOS ---
+# --- RESULTADOS FINALES ---
 st.divider()
-res1, res2, res3 = st.columns(3)
+c1, c2, c3 = st.columns(3)
 
-with res1:
+with c1:
     st.metric("Curva Base", f"{cb_final:.2f} D")
     st.caption(f"Radio: {337.5/cb_final:.2f} mm")
 
-with res2:
-    st.metric("Esfera Efectiva", f"{esf_final:.2f} D")
-    st.caption(f"Cil. Efectivo: {cil_final:.2f} D")
+with c2:
+    st.metric("Poder Efectivo", f"{esf_corneal:+.2f} D")
+    st.caption(f"Cil. Residual: {cil_corneal:+.2f} D")
 
-with res3:
+with c3:
     st.metric("Astig. Corneal", f"{astig_corneal:.2f} D")
-    st.caption(f"Diámetro: {diam} mm")
+    st.caption(f"Ø Final: {diam} mm")
 
-st.success(f"**ORDEN SUGERIDA:** CB {337.5/cb_final:.2f}mm / PODER EFECTIVO {esf_final:.2f} {cil_final:.2f} x {eje}° / Ø {diam}mm")
+st.info(f"**ORDEN SUGERIDA:** CB {337.5/cb_final:.2f}mm / PODER {esf_corneal:+.2f}D / Ø {diam}mm")
