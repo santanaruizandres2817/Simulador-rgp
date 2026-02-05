@@ -88,3 +88,4 @@ with c3:
     st.caption(f"Ø Final: {diam} mm")
 
 st.info(f"**ORDEN SUGERIDA:** CB {337.5/cb_final:.2f}mm / PODER {esf_corneal:+.2f}D / Ø {diam}mm")
+
