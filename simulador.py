@@ -33,33 +33,30 @@ if st.button("CALCULAR LENTE", use_container_width=True):
         cil = float(cilindro_input)
         dif_k = abs(k2 - k1)
         
-        # REGLA PRIORITARIA: Si Astigmatismo > 3.50 -> SIEMPRE K MEDIA
+        # DEFINICIÓN DE CB_FINAL (Esto arregla el error de tu foto)
         if dif_k > 3.50:
             cb_final = (k1 + k2) / 2
-            modo_nombre = "K MEDIA"
-            color_alerta = "orange"
-            diametro_final = 9.6 # Diámetro fijo para córneas con alto astigmatismo
+            modo_nombre = "MODO K MEDIA"
+            color_titulo = "#E67E22" # Naranja para alertar astigmatismo alto
         else:
-            # Si es menor a 3.50, usamos la filosofía por valor de K1
+            cb_final = k1
+            color_titulo = "#2E86C1" # Azul estándar
             if k1 <= 42.75:
                 modo_nombre = "ALINEAMIENTO APICAL"
-                color_alerta = "blue"
-                diametro_final = 9.6 # Por defecto 9.6
             else:
                 modo_nombre = "LIBRAMIENTO APICAL"
-                color_alerta = "green"
-                diametro_final = 9.6
 
+        # Ahora radio_mm siempre encontrará a cb_final
         radio_mm = 337.5 / cb_final
 
-        # PODER EFECTIVO (Vértice 12mm aplicado a Esfera y Cilindro por separado)
+        # PODER EFECTIVO (Vértice 12mm para Esfera y Cilindro)
         esf_efectiva = esf / (1 - (0.012 * esf)) if esf != 0 else 0.0
-        poder_total_anteojo = esf + cil
-        poder_total_efectivo = poder_total_anteojo / (1 - (0.012 * poder_total_anteojo)) if poder_total_anteojo != 0 else 0.0
-        cil_efectivo = poder_total_efectivo - esf_efectiva
+        poder_total = esf + cil
+        total_efectivo = poder_total / (1 - (0.012 * poder_total)) if poder_total != 0 else 0.0
+        cil_efectivo = total_efectivo - esf_efectiva
 
         # --- 4. RESULTADOS ---
-        st.markdown(f"<h2 style='text-align: center; color: {color_alerta};'>{modo_nombre}</h2>", unsafe_allow_html=True)
+        st.markdown(f"<h2 style='text-align: center; color: {color_titulo};'>{modo_nombre}</h2>", unsafe_allow_html=True)
         
         res1, res2 = st.columns(2)
         with res1:
@@ -68,10 +65,10 @@ if st.button("CALCULAR LENTE", use_container_width=True):
         with res2:
             st.metric("Poder Efectivo (Esf)", f"{esf_efectiva:+.2f} D")
             st.write(f"**Cilindro Efectivo:** {cil_efectivo:+.2f} D")
-            st.write(f"**Diámetro:** {diametro_final} mm")
+            st.write("**Diámetro:** 9.6 mm")
 
-        st.success(f"Cálculo para Rx: {esf:+.2f} {cil:+.2f} x {eje}°")
-        st.caption(f"Diferencia queratométrica: {dif_k:.2f} D. Distancia al vértice: 12mm.")
+        st.success(f"Cálculo listo para Rx: {esf:+.2f} {cil:+.2f} x {eje}°")
+        st.caption(f"Diferencia K: {dif_k:.2f} D. Vértice: 12mm.")
         
     except ValueError:
-        st.error("Revisa el formato de los números y signos.")
+        st.error("Error: Revisa que la esfera y el cilindro tengan números válidos.")
