@@ -26,57 +26,52 @@ with c3:
 
 st.divider()
 
-# --- 3. LÓGICA DE FILOSOFÍA Y DIÁMETRO ---
-if k1 <= 42.75:
-    filosofia = "ALINEAMIENTO APICAL"
-    st.info(f"Modo: {filosofia}")
-    diametro_final = st.radio("Diámetro Sugerido:", [9.2, 9.6], index=1, horizontal=True)
-else:
-    filosofia = "LIBRAMIENTO APICAL"
-    st.warning(f"Modo: {filosofia}")
-    st.write("Diámetro fijado automáticamente en **9.6 mm**")
-    diametro_final = 9.6
-
-# --- 4. CÁLCULOS ---
+# --- 3. LÓGICA DE CÁLCULO ---
 if st.button("CALCULAR LENTE", use_container_width=True):
     try:
         esf = float(esfera_input)
         cil = float(cilindro_input)
         dif_k = abs(k2 - k1)
         
-        # REGLA CB: Si Astigmatismo > 3.50 -> K Media. Si no -> K Plana.
+        # REGLA PRIORITARIA: Si Astigmatismo > 3.50 -> SIEMPRE K MEDIA
         if dif_k > 3.50:
             cb_final = (k1 + k2) / 2
-            tipo_cb = "K MEDIA"
+            modo_nombre = "K MEDIA"
+            color_alerta = "orange"
+            diametro_final = 9.6 # Diámetro fijo para córneas con alto astigmatismo
         else:
-            cb_final = k1
-            tipo_cb = "K PLANA"
-        
+            # Si es menor a 3.50, usamos la filosofía por valor de K1
+            if k1 <= 42.75:
+                modo_nombre = "ALINEAMIENTO APICAL"
+                color_alerta = "blue"
+                diametro_final = 9.6 # Por defecto 9.6
+            else:
+                modo_nombre = "LIBRAMIENTO APICAL"
+                color_alerta = "green"
+                diametro_final = 9.6
+
         radio_mm = 337.5 / cb_final
 
-        # PODER EFECTIVO (Vértice 12mm aplicado a Esfera y Cilindro)
-        # Se calcula la potencia efectiva de cada componente para obtener la Rx en plano corneal
+        # PODER EFECTIVO (Vértice 12mm aplicado a Esfera y Cilindro por separado)
         esf_efectiva = esf / (1 - (0.012 * esf)) if esf != 0 else 0.0
-        
-        # El cilindro efectivo se saca calculando el vértice del poder total y restando la esfera efectiva
         poder_total_anteojo = esf + cil
         poder_total_efectivo = poder_total_anteojo / (1 - (0.012 * poder_total_anteojo)) if poder_total_anteojo != 0 else 0.0
         cil_efectivo = poder_total_efectivo - esf_efectiva
 
-        # --- 5. RESULTADOS ---
-        st.markdown(f"### {filosofia}")
+        # --- 4. RESULTADOS ---
+        st.markdown(f"<h2 style='text-align: center; color: {color_alerta};'>{modo_nombre}</h2>", unsafe_allow_html=True)
+        
         res1, res2 = st.columns(2)
         with res1:
             st.metric("Curva Base (CB)", f"{cb_final:.2f} D")
             st.write(f"**Radio:** {radio_mm:.2f} mm")
-            st.caption(f"Basado en: {tipo_cb}")
         with res2:
             st.metric("Poder Efectivo (Esf)", f"{esf_efectiva:+.2f} D")
             st.write(f"**Cilindro Efectivo:** {cil_efectivo:+.2f} D")
             st.write(f"**Diámetro:** {diametro_final} mm")
-            st.caption("Compensación de Vértice a 12mm")
 
         st.success(f"Cálculo para Rx: {esf:+.2f} {cil:+.2f} x {eje}°")
+        st.caption(f"Diferencia queratométrica: {dif_k:.2f} D. Distancia al vértice: 12mm.")
         
     except ValueError:
         st.error("Revisa el formato de los números y signos.")
