@@ -33,7 +33,7 @@ if st.button("GENERAR PARÁMETROS DE PEDIDO", use_container_width=True):
         cil = float(cilindro_input)
         dif_k = abs(k2 - k1)
         
-        # REGLA PRIORITARIA: K MEDIA si > 3.50 D
+        # PRIORIDAD K MEDIA (Diferencia > 3.50 D)
         if dif_k > 3.50:
             cb_final_d = (k1 + k2) / 2
             modo_nombre = "MODO K MEDIA"
@@ -52,7 +52,7 @@ if st.button("GENERAR PARÁMETROS DE PEDIDO", use_container_width=True):
         # REDONDEO A PASOS DE 0.25
         poder_redondeado = round(esf_efectiva * 4) / 4
         
-        # Cilindro Efectivo (solo para receta complementaria)
+        # Receta efectiva completa
         poder_total = esf + cil
         total_efectivo = poder_total / (1 - (0.012 * poder_total)) if poder_total != 0 else 0.0
         cil_efectivo = total_efectivo - esf_efectiva
@@ -60,20 +60,16 @@ if st.button("GENERAR PARÁMETROS DE PEDIDO", use_container_width=True):
         # --- 4. RESULTADOS ---
         st.markdown(f"<h2 style='text-align: center; color: {color_titulo};'>{modo_nombre}</h2>", unsafe_allow_html=True)
         
-        # FICHA DE PEDIDO EN FORMATO DE LABORATORIO
         st.success("### 📝 Ficha de Pedido al Laboratorio")
-        st.markdown(f"""
-        **Formato Estándar:**
-        ### {radio_mm:.2f} / 9.60 / {poder_redondeado:+.2f} / {cpp_radio:.2f}
-        """)
+        # FORMATO SOLICITADO: CB / Diámetro / Poder / CPP
+        st.markdown(f"**Parámetros:**")
+        st.info(f"### {radio_mm:.2f} / 9.60 / {poder_redondeado:+.2f} / {cpp_radio:.2f}")
         
         st.divider()
-        col_det1, col_det2 = st.columns(2)
-        with col_det1:
-            st.write(f"**Poder Calculado:** {esf_efectiva:+.2f} D")
-            st.write(f"**Poder Redondeado:** {poder_redondeado:+.2f} D")
-        with col_det2:
-            st.write(f"**Curva Base:** {cb_final_d:.2f} D")
-            st.write(f"**CPP (Ancho):** 0.40 mm")
-
-        st.subheader("Receta Complementaria (Plano Corneal
+        st.subheader("Receta Complementaria (Plano Corneal)")
+        st.write(f"**Poder Efectivo Exacto:** {esf_efectiva:+.2f} D")
+        st.write(f"**Poder Redondeado (0.25):** {poder_redondeado:+.2f} D")
+        st.info(f"**Rx Efectiva:** {esf_efectiva:+.2f} {cil_efectivo:+.2f} x {eje}°")
+        
+    except ValueError:
+        st.error("Error: Revisa que la esfera y cilindro sean números.")
