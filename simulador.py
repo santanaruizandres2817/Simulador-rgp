@@ -27,27 +27,29 @@ with c3:
 st.divider()
 
 # --- 3. LÓGICA DE CÁLCULO ---
-if st.button("CALCULAR LENTE", use_container_width=True):
+if st.button("GENERAR PARÁMETROS DE PEDIDO", use_container_width=True):
     try:
         esf = float(esfera_input)
         cil = float(cilindro_input)
         dif_k = abs(k2 - k1)
         
-        # DEFINICIÓN DE CB_FINAL (Esto arregla el error de tu foto)
+        # REGLA PRIORITARIA: Si Astigmatismo > 3.50 -> K MEDIA
         if dif_k > 3.50:
             cb_final = (k1 + k2) / 2
             modo_nombre = "MODO K MEDIA"
-            color_titulo = "#E67E22" # Naranja para alertar astigmatismo alto
+            color_titulo = "#E67E22" 
         else:
             cb_final = k1
-            color_titulo = "#2E86C1" # Azul estándar
+            color_titulo = "#2E86C1"
             if k1 <= 42.75:
                 modo_nombre = "ALINEAMIENTO APICAL"
             else:
                 modo_nombre = "LIBRAMIENTO APICAL"
 
-        # Ahora radio_mm siempre encontrará a cb_final
         radio_mm = 337.5 / cb_final
+        
+        # CÁLCULO DE CPP ESTÁNDAR (0.4 mm)
+        cpp_radio = radio_mm + 0.4
 
         # PODER EFECTIVO (Vértice 12mm para Esfera y Cilindro)
         esf_efectiva = esf / (1 - (0.012 * esf)) if esf != 0 else 0.0
@@ -58,17 +60,21 @@ if st.button("CALCULAR LENTE", use_container_width=True):
         # --- 4. RESULTADOS ---
         st.markdown(f"<h2 style='text-align: center; color: {color_titulo};'>{modo_nombre}</h2>", unsafe_allow_html=True)
         
-        res1, res2 = st.columns(2)
-        with res1:
-            st.metric("Curva Base (CB)", f"{cb_final:.2f} D")
-            st.write(f"**Radio:** {radio_mm:.2f} mm")
-        with res2:
-            st.metric("Poder Efectivo (Esf)", f"{esf_efectiva:+.2f} D")
-            st.write(f"**Cilindro Efectivo:** {cil_efectivo:+.2f} D")
-            st.write("**Diámetro:** 9.6 mm")
+        # FICHA DE PEDIDO (Resaltada)
+        st.success("### 📝 Ficha de Pedido al Laboratorio")
+        f1, f2 = st.columns(2)
+        with f1:
+            st.write(f"**Curva Base (CB):** {radio_mm:.2f} mm ({cb_final:.2f} D)")
+            st.write(f"**Poder:** {esf_efectiva:+.2f} D")
+            st.write("**Diámetro Total (ØT):** 9.6 mm")
+        with f2:
+            st.write(f"**CPP (Radio):** {cpp_radio:.2f} mm")
+            st.write(f"**Ancho de CPP:** 0.4 mm")
+            st.write(f"**Vértice:** 12 mm")
 
-        st.success(f"Cálculo listo para Rx: {esf:+.2f} {cil:+.2f} x {eje}°")
-        st.caption(f"Diferencia K: {dif_k:.2f} D. Vértice: 12mm.")
+        st.divider()
+        st.subheader("Receta Complementaria (Plano Corneal):")
+        st.info(f"Rx Efectiva: {esf_efectiva:+.2f} {cil_efectivo:+.2f} x {eje}°")
         
     except ValueError:
-        st.error("Error: Revisa que la esfera y el cilindro tengan números válidos.")
+        st.error("Error: Revisa los valores de Rx (Esfera/Cilindro).")
