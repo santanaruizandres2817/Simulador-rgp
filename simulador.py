@@ -33,26 +33,26 @@ if st.button("GENERAR PARÁMETROS DE PEDIDO", use_container_width=True):
         cil = float(cilindro_input)
         dif_k = abs(k2 - k1)
         
-        # REGLA PRIORITARIA: Si Astigmatismo > 3.50 -> K MEDIA
+        # REGLA PRIORITARIA: K MEDIA si > 3.50 D
         if dif_k > 3.50:
-            cb_final = (k1 + k2) / 2
+            cb_final_d = (k1 + k2) / 2
             modo_nombre = "MODO K MEDIA"
             color_titulo = "#E67E22" 
         else:
-            cb_final = k1
+            cb_final_d = k1
             color_titulo = "#2E86C1"
-            if k1 <= 42.75:
-                modo_nombre = "ALINEAMIENTO APICAL"
-            else:
-                modo_nombre = "LIBRAMIENTO APICAL"
+            modo_nombre = "ALINEAMIENTO APICAL" if k1 <= 42.75 else "LIBRAMIENTO APICAL"
 
-        radio_mm = 337.5 / cb_final
-        
-        # CÁLCULO DE CPP ESTÁNDAR (0.4 mm)
+        radio_mm = 337.5 / cb_final_d
         cpp_radio = radio_mm + 0.4
 
-        # PODER EFECTIVO (Vértice 12mm para Esfera y Cilindro)
+        # PODER EFECTIVO (Vértice 12mm)
         esf_efectiva = esf / (1 - (0.012 * esf)) if esf != 0 else 0.0
+        
+        # REDONDEO A PASOS DE 0.25
+        poder_redondeado = round(esf_efectiva * 4) / 4
+        
+        # Cilindro Efectivo (solo para receta complementaria)
         poder_total = esf + cil
         total_efectivo = poder_total / (1 - (0.012 * poder_total)) if poder_total != 0 else 0.0
         cil_efectivo = total_efectivo - esf_efectiva
@@ -60,21 +60,20 @@ if st.button("GENERAR PARÁMETROS DE PEDIDO", use_container_width=True):
         # --- 4. RESULTADOS ---
         st.markdown(f"<h2 style='text-align: center; color: {color_titulo};'>{modo_nombre}</h2>", unsafe_allow_html=True)
         
-        # FICHA DE PEDIDO (Resaltada)
+        # FICHA DE PEDIDO EN FORMATO DE LABORATORIO
         st.success("### 📝 Ficha de Pedido al Laboratorio")
-        f1, f2 = st.columns(2)
-        with f1:
-            st.write(f"**Curva Base (CB):** {radio_mm:.2f} mm ({cb_final:.2f} D)")
-            st.write(f"**Poder:** {esf_efectiva:+.2f} D")
-            st.write("**Diámetro Total (ØT):** 9.6 mm")
-        with f2:
-            st.write(f"**CPP (Radio):** {cpp_radio:.2f} mm")
-            st.write(f"**Ancho de CPP:** 0.4 mm")
-            st.write(f"**Vértice:** 12 mm")
-
-        st.divider()
-        st.subheader("Receta Complementaria (Plano Corneal):")
-        st.info(f"Rx Efectiva: {esf_efectiva:+.2f} {cil_efectivo:+.2f} x {eje}°")
+        st.markdown(f"""
+        **Formato Estándar:**
+        ### {radio_mm:.2f} / 9.60 / {poder_redondeado:+.2f} / {cpp_radio:.2f}
+        """)
         
-    except ValueError:
-        st.error("Error: Revisa los valores de Rx (Esfera/Cilindro).")
+        st.divider()
+        col_det1, col_det2 = st.columns(2)
+        with col_det1:
+            st.write(f"**Poder Calculado:** {esf_efectiva:+.2f} D")
+            st.write(f"**Poder Redondeado:** {poder_redondeado:+.2f} D")
+        with col_det2:
+            st.write(f"**Curva Base:** {cb_final_d:.2f} D")
+            st.write(f"**CPP (Ancho):** 0.40 mm")
+
+        st.subheader("Receta Complementaria (Plano Corneal
