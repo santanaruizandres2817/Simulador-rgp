@@ -61,8 +61,12 @@ if st.button("CALCULAR LENTE", use_container_width=True):
     cb_dioptrias = k1 + ajuste
     radio_mm = 337.5 / cb_dioptrias
 
-    # Poder del Lente: Se toma la esfera directamente
-    poder_lente = esfera
+    # CÁLCULO DE PODER EFECTIVO (Vértice a 12mm)
+    # Evitamos división por cero si la esfera es 0
+    if esfera != 0:
+        poder_efectivo = esfera / (1 - (0.012 * esfera))
+    else:
+        poder_efectivo = 0.0
 
     # --- 5. RESULTADOS ---
     st.markdown(f"## {filosofia}")
@@ -72,7 +76,9 @@ if st.button("CALCULAR LENTE", use_container_width=True):
         st.metric("Curva Base (CB)", f"{cb_dioptrias:.2f} D")
         st.write(f"**Radio:** {radio_mm:.2f} mm")
     with res2:
-        st.metric("Poder del Lente", f"{poder_lente:+.2f} D")
+        # Mostramos el Poder Efectivo compensado
+        st.metric("Poder Efectivo", f"{poder_efectivo:+.2f} D")
         st.write(f"**Diámetro:** {diametro_final} mm")
 
     st.success(f"Adaptación lista para Rx: {esfera:+.2f} {cilindro:+.2f} x {eje}°")
+    st.caption("Cálculo de poder compensado a una distancia al vértice de 12mm.")
